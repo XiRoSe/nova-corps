@@ -146,6 +146,7 @@ vi.mock("../auth/better-auth.js", () => ({
   createBetterAuthHandler: vi.fn(() => undefined),
   createBetterAuthInstance: vi.fn(() => ({})),
   deriveAuthTrustedOrigins: vi.fn(() => []),
+  requireBetterAuthSecret: vi.fn(() => "test-secret"),
   resolveBetterAuthSession: vi.fn(async () => null),
   resolveBetterAuthSessionFromHeaders: vi.fn(async () => null),
 }));
