@@ -15,7 +15,7 @@ export function useNovaChat(enabled: boolean) {
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<WsMessage[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
     if (!enabled) return;
