@@ -44,8 +44,8 @@ export function resolvePrivateHostnameAllowSet(opts: { allowedHostnames: string[
 
 function blockedHostnameMessage(hostname: string): string {
   return (
-    `Hostname '${hostname}' is not allowed for this Paperclip instance. ` +
-    `If you want to allow this hostname, please run pnpm paperclipai allowed-hostname ${hostname}`
+    `Hostname '${hostname}' is not allowed for this Nova Corps instance. ` +
+    `If you want to allow this hostname, please run pnpm nova-corps allowed-hostname ${hostname}`
   );
 }
 

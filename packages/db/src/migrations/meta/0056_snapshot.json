@@ -1,0 +1,14 @@
+{
+  "id": "nova-environments-migration",
+  "prevId": "0055_kind_weapon_omega",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {},
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

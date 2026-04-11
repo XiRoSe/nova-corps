@@ -150,4 +150,6 @@ export const queryKeys = {
   adapters: {
     all: ["adapters"] as const,
   },
+  novaStatus: ["nova", "status"] as const,
+  novaChannels: ["nova", "channels"] as const,
 };

@@ -11,6 +11,8 @@ import {
   Boxes,
   Repeat,
   Settings,
+  MessageCircle,
+  Radio,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarSection } from "./SidebarSection";
@@ -79,6 +81,8 @@ export function Sidebar() {
             <SquarePen className="h-4 w-4 shrink-0" />
             <span className="truncate">New Issue</span>
           </button>
+          <SidebarNavItem to="/chat" label="Nova Chat" icon={MessageCircle} />
+          <SidebarNavItem to="/channels" label="Channels" icon={Radio} />
           <SidebarNavItem to="/dashboard" label="Dashboard" icon={LayoutDashboard} liveCount={liveRunCount} />
           <SidebarNavItem
             to="/inbox"

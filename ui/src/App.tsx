@@ -40,6 +40,8 @@ import { IssueChatUxLab } from "./pages/IssueChatUxLab";
 import { RunTranscriptUxLab } from "./pages/RunTranscriptUxLab";
 import { OrgChart } from "./pages/OrgChart";
 import { NewAgent } from "./pages/NewAgent";
+import { NovaChat } from "./pages/NovaChat";
+import { NovaChannels } from "./pages/NovaChannels";
 import { AuthPage } from "./pages/Auth";
 import { BoardClaimPage } from "./pages/BoardClaim";
 import { CliAuthPage } from "./pages/CliAuth";
@@ -58,8 +60,8 @@ function BootstrapPendingPage({ hasActiveInvite = false }: { hasActiveInvite?: b
         <h1 className="text-xl font-semibold">Instance setup required</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {hasActiveInvite
-            ? "No instance admin exists yet. A bootstrap invite is already active. Check your Paperclip startup logs for the first admin invite URL, or run this command to rotate it:"
-            : "No instance admin exists yet. Run this command in your Paperclip environment to generate the first admin invite URL:"}
+            ? "No instance admin exists yet. A bootstrap invite is already active. Check your Nova Corps startup logs for the first admin invite URL, or run this command to rotate it:"
+            : "No instance admin exists yet. Run this command in your Nova Corps environment to generate the first admin invite URL:"}
         </p>
         <pre className="mt-4 overflow-x-auto rounded-md border border-border bg-muted/30 p-3 text-xs">
 {`pnpm paperclipai auth bootstrap-ceo`}
@@ -123,6 +125,8 @@ function boardRoutes() {
     <>
       <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="dashboard" element={<Dashboard />} />
+      <Route path="chat" element={<NovaChat />} />
+      <Route path="channels" element={<NovaChannels />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Paperclip",
-  "short_name": "Paperclip",
-  "description": "AI-powered project management and agent coordination platform",
+  "name": "Nova Corps",
+  "short_name": "Nova Corps",
+  "description": "AI agent coordination platform — the last tool you'll ever need",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

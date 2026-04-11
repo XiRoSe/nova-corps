@@ -28,6 +28,7 @@ import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./middleware/logger.js";
 import { setupLiveEventsWebSocketServer } from "./realtime/live-events-ws.js";
+import { setupNovaChatWebSocket } from "./realtime/nova-chat-ws.js";
 import {
   feedbackService,
   heartbeatService,
@@ -557,6 +558,11 @@ export async function startServer(): Promise<StartedServer> {
   process.env.PAPERCLIP_API_URL = `http://${runtimeApiHost}:${listenPort}`;
   
   setupLiveEventsWebSocketServer(server, db as any, {
+    deploymentMode: config.deploymentMode,
+    resolveSessionFromHeaders,
+  });
+
+  setupNovaChatWebSocket(server, db as any, {
     deploymentMode: config.deploymentMode,
     resolveSessionFromHeaders,
   });

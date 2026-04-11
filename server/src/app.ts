@@ -31,6 +31,7 @@ import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
 import { pluginRoutes } from "./routes/plugins.js";
 import { adapterRoutes } from "./routes/adapters.js";
+import { novaRoutes } from "./routes/nova.js";
 import { pluginUiStaticRoutes } from "./routes/plugin-ui-static.js";
 import { applyUiBranding } from "./ui-branding.js";
 import { logger } from "./middleware/logger.js";
@@ -123,7 +124,7 @@ export async function createApp(
     }
     res.json({
       session: {
-        id: `paperclip:${req.actor.source}:${req.actor.userId}`,
+        id: `nova-corps:${req.actor.source}:${req.actor.userId}`,
         userId: req.actor.userId,
       },
       user: {
@@ -233,6 +234,7 @@ export async function createApp(
     ),
   );
   api.use(adapterRoutes());
+  api.use(novaRoutes(db));
   api.use(
     accessRoutes(db, {
       deploymentMode: opts.deploymentMode,
@@ -264,7 +266,7 @@ export async function createApp(
         res.status(200).set("Content-Type", "text/html").end(indexHtml);
       });
     } else {
-      console.warn("[paperclip] UI dist not found; running in API-only mode");
+      console.warn("[nova-corps] UI dist not found; running in API-only mode");
     }
   }
 
