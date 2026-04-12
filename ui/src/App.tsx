@@ -104,7 +104,7 @@ function CloudAccessGate() {
 function boardRoutes() {
   return (
     <>
-      <Route index element={<Navigate to="dashboard" replace />} />
+      <Route index element={<Navigate to="chat" replace />} />
       <Route path="dashboard" element={<Dashboard />} />
       <Route path="chat" element={<NovaChat />} />
       <Route path="channels" element={<NovaChannels />} />
@@ -220,7 +220,7 @@ function CompanyRootRedirect() {
     return <NoCompaniesStartPage />;
   }
 
-  return <Navigate to={`/${targetCompany.issuePrefix}/dashboard`} replace />;
+  return <Navigate to={`/${targetCompany.issuePrefix}/chat`} replace />;
 }
 
 function UnprefixedBoardRedirect() {
