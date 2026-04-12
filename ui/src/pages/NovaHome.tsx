@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Zap, CheckCircle2, Clock, AlertCircle, Play, Plus } from "lucide-react";
+import { Bot, Zap, CheckCircle2, Clock, Plus, Activity, DollarSign, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
 import { useCompany } from "@/context/CompanyContext";
 import { useDialog } from "@/context/DialogContext";
 import { agentsApi } from "@/api/agents";
 import { issuesApi } from "@/api/issues";
+import { heartbeatsApi } from "@/api/heartbeats";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Agent } from "@paperclipai/shared";
 
@@ -26,24 +27,73 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function AgentCard({ agent }: { agent: Agent }) {
+interface LiveRun {
+  id: string;
+  status: string;
+  agentId: string;
+  agentName: string;
+  invocationSource: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+}
+
+function AgentCard({ agent, liveRun }: { agent: Agent; liveRun?: LiveRun }) {
+  const isRunning = liveRun?.status === "running";
   return (
     <Link
       to={`/agents/${agent.id}`}
-      className="block rounded-lg border border-border bg-card p-4 hover:border-primary/50 transition-colors"
+      className={`block rounded-lg border bg-card p-4 hover:border-primary/50 transition-colors ${isRunning ? "border-blue-500/50" : "border-border"}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <Bot className="h-5 w-5 text-primary" />
+          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isRunning ? "bg-blue-500/10" : "bg-primary/10"}`}>
+            {isRunning ? <Loader2 className="h-5 w-5 text-blue-400 animate-spin" /> : <Bot className="h-5 w-5 text-primary" />}
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">{agent.name}</p>
             <p className="text-xs text-muted-foreground">{agent.title || agent.role}</p>
           </div>
         </div>
-        <StatusBadge status={agent.status} />
+        {isRunning ? (
+          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-400 animate-pulse">
+            Working...
+          </span>
+        ) : (
+          <StatusBadge status={agent.status} />
+        )}
       </div>
+    </Link>
+  );
+}
+
+function RunCard({ run, agents }: { run: LiveRun; agents: Agent[] }) {
+  const agent = agents.find((a) => a.id === run.agentId);
+  const isRunning = run.status === "running";
+  const time = run.finishedAt ? new Date(run.finishedAt) : new Date(run.createdAt);
+  const ago = Math.round((Date.now() - time.getTime()) / 60000);
+  const agoText = ago < 1 ? "just now" : ago < 60 ? `${ago}m ago` : `${Math.round(ago / 60)}h ago`;
+
+  return (
+    <Link
+      to={`/agents/${run.agentId}/runs/${run.id}`}
+      className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 hover:border-primary/50 transition-colors"
+    >
+      <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${isRunning ? "bg-blue-500/10" : run.status === "completed" ? "bg-green-500/10" : "bg-red-500/10"}`}>
+        {isRunning ? <Loader2 className="h-4 w-4 text-blue-400 animate-spin" /> :
+          run.status === "completed" ? <CheckCircle2 className="h-4 w-4 text-green-400" /> :
+          <Activity className="h-4 w-4 text-red-400" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-foreground">
+          <span className="font-medium">{agent?.name ?? "Agent"}</span>
+          <span className="text-muted-foreground"> — {run.invocationSource === "on_demand" ? "manual run" : run.invocationSource === "timer" ? "scheduled check" : run.invocationSource}</span>
+        </p>
+        <p className="text-xs text-muted-foreground">{agoText}</p>
+      </div>
+      <span className={`text-xs ${isRunning ? "text-blue-400" : run.status === "completed" ? "text-green-400" : "text-red-400"}`}>
+        {isRunning ? "running" : run.status}
+      </span>
     </Link>
   );
 }
@@ -107,8 +157,16 @@ export function NovaHome() {
     enabled: !!selectedCompanyId,
   });
 
+  const runsQuery = useQuery({
+    queryKey: queryKeys.liveRuns(selectedCompanyId!),
+    queryFn: () => heartbeatsApi.liveRunsForCompany(selectedCompanyId!, 10),
+    enabled: !!selectedCompanyId,
+    refetchInterval: 5_000,
+  });
+
   const agents = agentsQuery.data ?? [];
   const issues = (issuesQuery.data as Issue[] | undefined) ?? [];
+  const runs = (runsQuery.data ?? []) as LiveRun[];
   const activeTasks = issues.filter((i) => i.status === "in_progress");
   const todoTasks = issues.filter((i) => i.status === "todo" || i.status === "backlog");
   const doneTasks = issues.filter((i) => i.status === "done" || i.status === "in_review");
@@ -138,7 +196,7 @@ export function NovaHome() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {agents.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} />
+              <AgentCard key={agent.id} agent={agent} liveRun={runs.find((r) => r.agentId === agent.id && r.status === "running")} />
             ))}
             {agents.length === 0 && (
               <p className="text-sm text-muted-foreground col-span-2">
@@ -190,6 +248,20 @@ export function NovaHome() {
             <div className="space-y-2">
               {doneTasks.map((issue) => (
                 <TaskRow key={issue.id} issue={issue} agents={agents} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Recent Activity */}
+        {runs.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Recent Activity ({runs.length})
+            </h2>
+            <div className="space-y-2">
+              {runs.slice(0, 8).map((run) => (
+                <RunCard key={run.id} run={run} agents={agents} />
               ))}
             </div>
           </section>
