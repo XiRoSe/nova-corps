@@ -272,7 +272,7 @@ export function Dashboard() {
               icon={ShieldCheck}
               value={data.pendingApprovals + data.budgets.pendingApprovals}
               label="Pending Approvals"
-              to="/approvals"
+              to="/inbox"
               description={
                 <span>
                   {data.budgets.pendingApprovals > 0

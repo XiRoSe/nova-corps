@@ -223,12 +223,12 @@ function scrollToContainerBottom(container: ScrollContainer, behavior: ScrollBeh
   container.scrollTo({ top: container.scrollHeight, behavior });
 }
 
-type AgentDetailView = "dashboard" | "instructions" | "configuration" | "skills" | "runs" | "budget";
+type AgentDetailView = "dashboard" | "instructions" | "configuration" | "runs" | "budget";
 
 function parseAgentDetailView(value: string | null): AgentDetailView {
   if (value === "instructions" || value === "prompts") return "instructions";
   if (value === "configure" || value === "configuration") return "configuration";
-  if (value === "skills") return "skills";
+
   if (value === "budget") return "budget";
   if (value === "runs") return value;
   return "dashboard";
@@ -1007,7 +1007,7 @@ export function AgentDetail() {
             items={[
               { value: "dashboard", label: "Dashboard" },
               { value: "instructions", label: "Instructions" },
-              { value: "skills", label: "Skills" },
+
               { value: "configuration", label: "Configuration" },
               { value: "runs", label: "Runs" },
               { value: "budget", label: "Budget" },
@@ -1117,12 +1117,6 @@ export function AgentDetail() {
         />
       )}
 
-      {activeView === "skills" && (
-        <AgentSkillsTab
-          agent={agent}
-          companyId={resolvedCompanyId ?? undefined}
-        />
-      )}
 
       {activeView === "runs" && (
         <RunsTab
