@@ -6,6 +6,7 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import { authApi } from "./api/auth";
 import { healthApi } from "./api/health";
 import { Dashboard } from "./pages/Dashboard";
+import { NovaHome } from "./pages/NovaHome";
 import { Companies } from "./pages/Companies";
 import { Agents } from "./pages/Agents";
 import { AgentDetail } from "./pages/AgentDetail";
@@ -104,7 +105,8 @@ function CloudAccessGate() {
 function boardRoutes() {
   return (
     <>
-      <Route index element={<Navigate to="chat" replace />} />
+      <Route index element={<Navigate to="home" replace />} />
+      <Route path="home" element={<NovaHome />} />
       <Route path="dashboard" element={<Dashboard />} />
       <Route path="chat" element={<NovaChat />} />
       <Route path="channels" element={<NovaChannels />} />
@@ -220,7 +222,7 @@ function CompanyRootRedirect() {
     return <NoCompaniesStartPage />;
   }
 
-  return <Navigate to={`/${targetCompany.issuePrefix}/chat`} replace />;
+  return <Navigate to={`/${targetCompany.issuePrefix}/home`} replace />;
 }
 
 function UnprefixedBoardRedirect() {
