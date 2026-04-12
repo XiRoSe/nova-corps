@@ -121,8 +121,8 @@ export function SidebarAgents() {
                 <span className="flex-1 truncate">
                   {agent.name}
                   {agent.title && (
-                    <span className="text-[11px] text-muted-foreground/60 ml-1">
-                      {agent.title}
+                    <span className="text-[11px] text-muted-foreground/60 ml-1.5">
+                      {" "}{agent.title}
                     </span>
                   )}
                 </span>
