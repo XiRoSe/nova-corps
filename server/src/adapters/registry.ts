@@ -203,7 +203,17 @@ const novaAgentAdapter: ServerAdapterModule = {
   execute: novaAgentExecute,
   testEnvironment: novaAgentTestEnvironment,
   models: novaAgentModels,
-  label: "Nova Agent (Direct API)",
+  supportsLocalAgentJwt: true,
+  agentConfigurationDoc: `# Nova Agent (Direct API) configuration
+
+Adapter: nova_agent
+
+Calls the Anthropic Claude API directly. No CLI needed — only ANTHROPIC_API_KEY.
+
+Config fields:
+- model (string, optional): Claude model (default: claude-sonnet-4-5-20250929)
+- maxTurnsPerRun (number, optional): Max tool call rounds per heartbeat (default: 20)
+`,
 };
 
 const adaptersByType = new Map<string, ServerAdapterModule>();
