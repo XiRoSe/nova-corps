@@ -80,6 +80,11 @@ import {
   agentConfigurationDoc as hermesAgentConfigurationDoc,
   models as hermesModels,
 } from "hermes-paperclip-adapter";
+import {
+  execute as novaAgentExecute,
+  testEnvironment as novaAgentTestEnvironment,
+  models as novaAgentModels,
+} from "./nova-agent/index.js";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
 import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
@@ -193,6 +198,14 @@ const hermesLocalAdapter: ServerAdapterModule = {
   detectModel: () => detectModelFromHermes(),
 };
 
+const novaAgentAdapter: ServerAdapterModule = {
+  type: "nova_agent",
+  execute: novaAgentExecute,
+  testEnvironment: novaAgentTestEnvironment,
+  models: novaAgentModels,
+  label: "Nova Agent (Direct API)",
+};
+
 const adaptersByType = new Map<string, ServerAdapterModule>();
 
 // For builtin types that are overridden by an external adapter, we keep the
@@ -214,6 +227,7 @@ function registerBuiltInAdapters() {
     geminiLocalAdapter,
     openclawGatewayAdapter,
     hermesLocalAdapter,
+    novaAgentAdapter,
     processAdapter,
     httpAdapter,
   ]) {
