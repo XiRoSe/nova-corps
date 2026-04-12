@@ -1,7 +1,7 @@
 /**
  * Dynamic UI parser loading for external adapters.
  *
- * When the Paperclip UI encounters an adapter type that doesn't have a
+ * When the Nova Corps UI encounters an adapter type that doesn't have a
  * built-in parser (e.g., an external adapter loaded via the plugin system),
  * it fetches the parser JS from `/api/adapters/:type/ui-parser.js` and
  * evaluates it to create a `parseStdoutLine` function.

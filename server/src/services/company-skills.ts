@@ -1341,8 +1341,8 @@ function deriveSkillSourceInfo(skill: CompanySkill): {
   if (metadata.sourceKind === "paperclip_bundled") {
     return {
       editable: false,
-      editableReason: "Bundled Paperclip skills are read-only.",
-      sourceLabel: "Paperclip bundled",
+      editableReason: "Bundled Nova Corps skills are read-only.",
+      sourceLabel: "Nova Corps bundled",
       sourceBadge: "paperclip",
       sourcePath: null,
     };
@@ -1391,7 +1391,7 @@ function deriveSkillSourceInfo(skill: CompanySkill): {
       return {
         editable: true,
         editableReason: null,
-        sourceLabel: "Paperclip workspace",
+        sourceLabel: "Nova Corps workspace",
         sourceBadge: "paperclip",
         sourcePath: managedRoot,
       };
@@ -2077,7 +2077,7 @@ export function companySkillService(db: Db) {
         source,
         required,
         requiredReason: required
-          ? "Bundled Paperclip skills are always available for local adapters."
+          ? "Bundled Nova Corps skills are always available for local adapters."
           : null,
       });
     }

@@ -236,7 +236,7 @@ export function OpenClawGatewayConfigFields({
 
           <Field label="Device auth">
             <div className="text-xs text-muted-foreground leading-relaxed">
-              Always enabled for gateway agents. Paperclip persists a device key during onboarding so pairing approvals
+              Always enabled for gateway agents. Nova Corps persists a device key during onboarding so pairing approvals
               remain stable across runs.
             </div>
           </Field>
