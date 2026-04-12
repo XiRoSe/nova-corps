@@ -215,7 +215,7 @@ export function NovaHome() {
     }
   }
 
-  const totalSpend = costs ? `$${((costs as any).totalCostCents / 100).toFixed(2)}` : "$0.00";
+  const totalSpend = costs ? `$${(costs.spendCents / 100).toFixed(2)}` : "$0.00";
 
   return (
     <div className="h-full overflow-y-auto scrollbar-auto-hide">
