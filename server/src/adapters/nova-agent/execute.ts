@@ -13,7 +13,7 @@ function buildTools(companyId: string): Anthropic.Tool[] {
     {
       name: "get_issue",
       description:
-        "Retrieve a single issue by its ID. Returns the full issue object including title, description, status, assignee, comments, and sub-issues.",
+        "Retrieve a single issue/task by its ID. Returns title, description, status, assignee, comments, and sub-issues.",
       input_schema: {
         type: "object" as const,
         properties: {
@@ -25,7 +25,7 @@ function buildTools(companyId: string): Anthropic.Tool[] {
     {
       name: "update_issue_status",
       description:
-        "Update the status of an issue. Valid statuses typically include: backlog, todo, in_progress, in_review, done, cancelled.",
+        "Update the status of a task. Valid statuses: backlog, todo, in_progress, in_review, done, cancelled.",
       input_schema: {
         type: "object" as const,
         properties: {
@@ -37,7 +37,7 @@ function buildTools(companyId: string): Anthropic.Tool[] {
     },
     {
       name: "add_comment",
-      description: "Add a comment to an issue. Use this to provide status updates, ask questions, or document decisions.",
+      description: "Add a comment to a task. Use for status updates, decisions, questions, or deliverables. The user reads these — make them useful.",
       input_schema: {
         type: "object" as const,
         properties: {
@@ -50,16 +50,16 @@ function buildTools(companyId: string): Anthropic.Tool[] {
     {
       name: "create_sub_issue",
       description:
-        "Create a new sub-issue under a parent issue. Use this to break down work into smaller tasks.",
+        "Create a sub-task under a parent task. Use to break work into smaller pieces or delegate.",
       input_schema: {
         type: "object" as const,
         properties: {
-          title: { type: "string", description: "Title of the new sub-issue." },
-          description: { type: "string", description: "Detailed description of the sub-issue." },
-          parentId: { type: "string", description: "The ID of the parent issue." },
+          title: { type: "string", description: "Title of the new sub-task." },
+          description: { type: "string", description: "Detailed description of what needs to be done." },
+          parentId: { type: "string", description: "The ID of the parent task." },
           assigneeAgentId: {
             type: "string",
-            description: "The agent ID to assign this sub-issue to (optional).",
+            description: "The agent ID to assign this sub-task to (optional).",
           },
         },
         required: ["title", "description", "parentId"],
@@ -68,7 +68,7 @@ function buildTools(companyId: string): Anthropic.Tool[] {
     {
       name: "list_issues",
       description:
-        "List all issues for the company. Returns an array of issue objects. Use this to get an overview of current work.",
+        "List all tasks for the company. Returns an array of task objects with status, assignee, and details.",
       input_schema: {
         type: "object" as const,
         properties: {},
@@ -77,7 +77,7 @@ function buildTools(companyId: string): Anthropic.Tool[] {
     },
     {
       name: "list_agents",
-      description: "List all agents in the company. Check this BEFORE hiring to avoid creating duplicates.",
+      description: "List all agents in the company. Check this BEFORE hiring to avoid duplicates.",
       input_schema: {
         type: "object" as const,
         properties: {},
@@ -87,16 +87,20 @@ function buildTools(companyId: string): Anthropic.Tool[] {
     {
       name: "hire_agent",
       description:
-        "Hire a new agent. IMPORTANT: First call list_agents to check if one already exists for this role.",
+        "Hire a new agent to join the team. The new agent will wake up autonomously and start working on assigned tasks. ALWAYS call list_agents first to check for duplicates.",
       input_schema: {
         type: "object" as const,
         properties: {
-          name: { type: "string", description: "Name for the new agent." },
-          role: { type: "string", description: "Role description for the agent." },
-          title: { type: "string", description: "Job title for the agent." },
+          name: { type: "string", description: "Name for the new agent (use Nova Corps Marvel character names)." },
+          role: { type: "string", description: "Role key: general, engineer, ceo, designer, etc." },
+          title: { type: "string", description: "Human-readable job title: CTO, Product Manager, etc." },
           adapterType: {
             type: "string",
-            description: 'The adapter type for the new agent (e.g. "nova_agent").',
+            description: 'Must be "nova_agent".',
+          },
+          capabilities: {
+            type: "string",
+            description: "What this agent specializes in. This becomes their instructions. Be specific about their responsibilities.",
           },
         },
         required: ["name", "role", "title", "adapterType"],
@@ -106,28 +110,92 @@ function buildTools(companyId: string): Anthropic.Tool[] {
 }
 
 // ---------------------------------------------------------------------------
+// Role-based behavior profiles
+// ---------------------------------------------------------------------------
+
+const ROLE_PROFILES: Record<string, string> = {
+  ceo: `You are the CEO. Your job is LEADERSHIP and DELEGATION, not execution.
+
+Your responsibilities:
+- Review the big picture: what tasks exist, who's working on what, what's blocked
+- Break high-level goals into concrete tasks and assign them to the right people
+- Hire new agents when the workload demands it (too many unassigned tasks, or skills gaps)
+- Make strategic decisions and document them as comments
+- Unblock your team — if someone's stuck, help or reassign
+- Mark tasks as done when deliverables are complete
+
+You should NOT:
+- Do the detailed work yourself (that's what your team is for)
+- Repeat the same status update every heartbeat
+- Say "everything looks good" without checking
+
+Decision framework for hiring:
+- If there are 3+ unassigned tasks → consider hiring
+- If tasks need skills your team lacks → hire a specialist
+- If one agent has 3+ tasks → hire to distribute load
+- Never hire if an equivalent agent already exists`,
+
+  engineer: `You are an Engineer. Your job is EXECUTION — getting tasks done.
+
+Your responsibilities:
+- Work on your assigned tasks: analyze, plan, implement, deliver
+- Add substantive comments showing your work and decisions
+- Break complex tasks into sub-tasks when needed
+- Update task status as you progress (todo → in_progress → in_review → done)
+- Ask for help or flag blockers in comments
+
+Your comments should contain REAL WORK:
+- Analysis, plans, recommendations, code snippets, research findings
+- Not just "I'm looking at this" or "Working on it"
+- Each comment should move the task forward
+
+When a task is done:
+- Add a final comment with deliverables/summary
+- Set status to "done"`,
+
+  designer: `You are a Designer. Your job is creating user experiences and visual designs.
+
+Your responsibilities:
+- Create UI/UX designs, wireframes, and mockups (described in markdown)
+- Review existing interfaces and suggest improvements
+- Document design decisions and rationale
+- Create style guides and component specifications`,
+
+  general: `You are a team member. Adapt to whatever tasks are assigned to you.
+
+Your responsibilities:
+- Work on assigned tasks diligently
+- Add useful comments showing progress and decisions
+- Flag blockers and ask questions when stuck
+- Update task status as you progress`,
+};
+
+function getRoleProfile(role: string): string {
+  return ROLE_PROFILES[role] || ROLE_PROFILES.general!;
+}
+
+// ---------------------------------------------------------------------------
 // System prompt builder
 // ---------------------------------------------------------------------------
 
-function buildSystemPrompt(agent: AdapterExecutionContext["agent"], authToken: string | undefined): string {
-  return `You are ${agent.name}, a Nova Corps officer.
+function buildSystemPrompt(agent: AdapterExecutionContext["agent"]): string {
+  const roleProfile = getRoleProfile(agent.role ?? "general");
+  const capabilities = (agent as Record<string, unknown>).capabilities as string | undefined;
 
-Identity: ${agent.id} | Company ${agent.companyId}
+  return `You are ${agent.name}, ${agent.title || agent.role || "team member"} at Nova Corps.
 
-You manage tasks and coordinate your team.
+${roleProfile}
 
-When hiring new agents, use Nova Corps character names from Marvel:
-- Sam Alexander, Irani Rael, Garthan Saal, Jesse Alexander, Titus, Ko-Rel, Adora, Pyreus Kril
-Give them real job titles: CTO, Product Manager, Designer, DevOps Engineer, etc.
-Always set adapterType to "nova_agent".
+${capabilities ? `Your specific focus:\n${capabilities}\n` : ""}Available tools: list_issues, get_issue, update_issue_status, add_comment, create_sub_issue, list_agents, hire_agent
 
-Tools: list_issues, get_issue, update_issue_status, add_comment, create_sub_issue, list_agents, hire_agent
+Nova Corps character names for hiring: Sam Alexander, Irani Rael, Garthan Saal, Jesse Alexander, Titus, Ko-Rel, Adora, Pyreus Kril.
+Always set adapterType to "nova_agent". Give real job titles (CTO, Product Manager, DevOps, etc.).
 
 Rules:
 - Check list_agents before hiring — never create duplicates.
-- Update task status as you work (todo → in_progress → done).
-- Keep comments brief and actionable.
-- If nothing needs action, confirm and stop. No busywork.`;
+- Always check list_issues to understand the current state before acting.
+- Every comment should add value. No filler like "checking in" or "nothing to report".
+- If truly nothing needs action, just stop. Don't comment to say nothing happened.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -152,8 +220,8 @@ function buildUserPrompt(context: Record<string, unknown>): string {
 
   if (parts.length === 0) {
     parts.push(
-      "You have been woken up for a heartbeat check. Review your assigned issues and take any necessary actions. " +
-        "If there is nothing to do, briefly confirm that everything is up to date.",
+      "Heartbeat. Check the current state of tasks and your team, then take meaningful action. " +
+        "Do NOT comment just to say everything is fine — only act if there's something to do.",
     );
   }
 
@@ -175,6 +243,7 @@ interface ToolInput {
   name?: string;
   role?: string;
   adapterType?: string;
+  capabilities?: string;
 }
 
 async function executeToolCall(
@@ -209,7 +278,7 @@ async function executeToolCall(
     case "add_comment":
       url = `${API_BASE}/issues/${toolInput.issueId}/comments`;
       method = "POST";
-      body = JSON.stringify({ content: toolInput.content });
+      body = JSON.stringify({ body: toolInput.content });
       break;
 
     case "create_sub_issue": {
@@ -237,16 +306,30 @@ async function executeToolCall(
       method = "GET";
       break;
 
-    case "hire_agent":
+    case "hire_agent": {
       url = `${API_BASE}/companies/${companyId}/agent-hires`;
       method = "POST";
-      body = JSON.stringify({
+      const hireBody: Record<string, unknown> = {
         name: toolInput.name,
         role: toolInput.role,
         title: toolInput.title,
-        adapterType: toolInput.adapterType,
-      });
+        adapterType: toolInput.adapterType || "nova_agent",
+        runtimeConfig: {
+          heartbeat: {
+            enabled: true,
+            intervalSec: 7200,
+            cooldownSec: 30,
+            wakeOnDemand: true,
+            maxConcurrentRuns: 1,
+          },
+        },
+      };
+      if (toolInput.capabilities) {
+        hireBody.capabilities = toolInput.capabilities;
+      }
+      body = JSON.stringify(hireBody);
       break;
+    }
 
     default:
       return { ok: false, body: { error: `Unknown tool: ${toolName}` } };
@@ -304,11 +387,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   }
 
   const anthropic = new Anthropic({ apiKey });
-  const systemPrompt = buildSystemPrompt(agent, authToken);
+  const systemPrompt = buildSystemPrompt(agent);
   const userPrompt = buildUserPrompt(context);
   const tools = buildTools(agent.companyId);
 
-  await onLog("stdout", `[nova-agent] Starting run ${runId} for agent "${agent.name}" (${agent.id})\n`);
+  await onLog("stdout", `[nova-agent] Starting run ${runId} for ${agent.name} (${agent.title || agent.role})\n`);
   await onLog("stdout", `[nova-agent] Model: ${model}\n`);
 
   let totalInputTokens = 0;
@@ -318,7 +401,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   let lastTextResponse = "";
   let rounds = 0;
 
-  // Build the initial messages array
   const messages: Anthropic.MessageParam[] = [
     { role: "user", content: userPrompt },
   ];
@@ -346,7 +428,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         totalCacheRead += (response.usage as Record<string, number>).cache_read_input_tokens ?? 0;
       }
 
-      // Check for text blocks and tool_use blocks
       const textBlocks = response.content.filter(
         (block): block is Anthropic.TextBlock => block.type === "text",
       );
@@ -354,7 +435,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
       );
 
-      // Capture any text output
       for (const tb of textBlocks) {
         if (tb.text) {
           lastTextResponse = tb.text;
@@ -362,16 +442,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         }
       }
 
-      // If no tool calls, we're done
       if (toolUseBlocks.length === 0) {
         await onLog("stdout", `[nova-agent] No more tool calls — finishing.\n`);
         break;
       }
 
-      // Add the assistant's response to conversation history
       messages.push({ role: "assistant", content: response.content });
 
-      // Execute each tool call and collect results
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
       for (const toolUse of toolUseBlocks) {
@@ -403,12 +480,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         });
       }
 
-      // Add tool results to conversation
       messages.push({ role: "user", content: toolResults });
-
-      // If the model signaled stop (end_turn) alongside tool calls, continue
-      // to let it process the results. If stop_reason is "end_turn" with no
-      // tool calls that was already handled above.
     }
 
     if (rounds >= MAX_TOOL_ROUNDS) {
