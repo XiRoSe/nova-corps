@@ -429,7 +429,7 @@ function generateReadmeFromSelection(
 
   lines.push("## What's Inside");
   lines.push("");
-  lines.push("This is an [Agent Company](https://paperclip.ing) package.");
+  lines.push("This is an [Agent Company](https://paperclip.ing) package from [Nova Corps](https://paperclip.ing).");
   lines.push("");
 
   const counts: Array<[string, number]> = [];
@@ -473,13 +473,13 @@ function generateReadmeFromSelection(
   lines.push("## Getting Started");
   lines.push("");
   lines.push("```bash");
-  lines.push("pnpm paperclipai company import this-github-url-or-folder");
+  lines.push("pnpm nova-corps company import this-github-url-or-folder");
   lines.push("```");
   lines.push("");
-  lines.push("See [Paperclip](https://paperclip.ing) for more information.");
+  lines.push("See [Nova Corps](https://paperclip.ing) for more information.");
   lines.push("");
   lines.push("---");
-  lines.push(`Exported from [Paperclip](https://paperclip.ing) on ${new Date().toISOString().split("T")[0]}`);
+  lines.push(`Exported from [Nova Corps](https://paperclip.ing) on ${new Date().toISOString().split("T")[0]}`);
   lines.push("");
 
   return lines.join("\n");

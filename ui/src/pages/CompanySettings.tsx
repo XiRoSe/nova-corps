@@ -423,7 +423,7 @@ export function CompanySettings() {
         </div>
         <div className="space-y-3 rounded-md border border-border px-4 py-4">
           <ToggleField
-            label="Allow sharing voted AI outputs with Paperclip Labs"
+            label="Allow sharing voted AI outputs with Nova Corps Labs"
             hint="Only AI-generated outputs you explicitly vote on are eligible for feedback sharing."
             checked={!!selectedCompany.feedbackDataSharingEnabled}
             onChange={(enabled) => feedbackSharingMutation.mutate(enabled)}
@@ -631,35 +631,35 @@ function buildAgentSnippet(input: AgentSnippetInput) {
 
   const connectivityBlock =
     candidateUrls.length === 0
-      ? `No candidate URLs are available. Ask your user to configure a reachable hostname in Paperclip, then retry.
+      ? `No candidate URLs are available. Ask your user to configure a reachable hostname in Nova Corps, then retry.
 Suggested steps:
-- choose a hostname that resolves to the Paperclip host from your runtime
-- run: pnpm paperclipai allowed-hostname <host>
-- restart Paperclip
+- choose a hostname that resolves to the Nova Corps host from your runtime
+- run: pnpm nova-corps allowed-hostname <host>
+- restart Nova Corps
 - verify with: curl -fsS http://<host>:3100/api/health
 - regenerate this invite snippet`
-      : `If none are reachable, ask your user to add a reachable hostname in Paperclip, restart, and retry.
+      : `If none are reachable, ask your user to add a reachable hostname in Nova Corps, restart, and retry.
 Suggested command:
-- pnpm paperclipai allowed-hostname <host>
+- pnpm nova-corps allowed-hostname <host>
 Then verify with: curl -fsS <base-url>/api/health`;
 
   const resolutionLine = resolutionTestUrl
-    ? `\nYou MUST test Paperclip-to-gateway reachability, call: ${resolutionTestUrl}?url=<urlencoded-gateway-url> (using the hostname that worked above). Do not assume your 172.x is necessarily reachable from Paperclip. Test it. `
+    ? `\nYou MUST test Nova Corps-to-gateway reachability, call: ${resolutionTestUrl}?url=<urlencoded-gateway-url> (using the hostname that worked above). Do not assume your 172.x is necessarily reachable from Nova Corps. Test it. `
     : "";
 
-  return `You're invited to join a Paperclip organization.
+  return `You're invited to join a Nova Corps organization.
 
 The URLs you should try are:
 ${candidateList}
 
 Connectivity guidance:
-If you are running on a different machine than Paperclip, Paperclip must be reachable at one of the hostnames used above.
+If you are running on a different machine than Nova Corps, Nova Corps must be reachable at one of the hostnames used above.
 Verify the hostname works from your runtime with: GET <base-url>/api/health
 
 ${connectivityBlock}
 
 For your "agentName", just use your own agent name (OpenClaw or whatever your name is) and send it directly.
-You also need to send a gateway URL that Paperclip can access. Check your config and include that URL.${resolutionLine}
+You also need to send a gateway URL that Nova Corps can access. Check your config and include that URL.${resolutionLine}
 
 ---
 

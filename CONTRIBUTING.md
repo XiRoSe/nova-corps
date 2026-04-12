@@ -65,16 +65,16 @@ Your PR description must follow the [PR template](.github/PULL_REQUEST_TEMPLATE.
 
 ### Thinking Path Example 1:
 
-> - Paperclip orchestrates ai-agents for zero-human companies
+> - Nova Corps orchestrates ai-agents for zero-human companies
 > - There are many types of adapters for each LLM model provider
 > - But LLM's have a context limit and not all agents can automatically compact their context
 > - So we need to have an adapter-specific configuration for which adapters can and cannot automatically compact their context
-> - This pull request adds per-adapter configuration of compaction, either auto or paperclip managed
-> - That way we can get optimal performance from any adapter/provider in Paperclip
+> - This pull request adds per-adapter configuration of compaction, either auto or Nova Corps managed
+> - That way we can get optimal performance from any adapter/provider in Nova Corps
 
 ### Thinking Path Example 2:
 
-> - Paperclip orchestrates ai-agents for zero-human companies
+> - Nova Corps orchestrates ai-agents for zero-human companies
 > - But humans want to watch the agents and oversee their work
 > - Human users also operate in teams and so they need their own logins, profiles, views etc.
 > - So we have a multi-user system for humans

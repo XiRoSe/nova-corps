@@ -1396,7 +1396,7 @@ export function heartbeatService(db: Db) {
       readNonEmptyString(latestRun.error);
 
     const handoffMarkdown = [
-      "Paperclip session handoff:",
+      "Nova Corps session handoff:",
       `- Previous session: ${sessionId}`,
       issueId ? `- Issue: ${issueId}` : "",
       `- Rotation reason: ${reason}`,

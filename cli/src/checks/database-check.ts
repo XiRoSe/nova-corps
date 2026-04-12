@@ -11,7 +11,7 @@ export async function databaseCheck(config: PaperclipConfig, configPath?: string
         status: "fail",
         message: "PostgreSQL mode selected but no connection string configured",
         canRepair: false,
-        repairHint: "Run `paperclipai configure --section database`",
+        repairHint: "Run `nova-corps configure --section database`",
       };
     }
 

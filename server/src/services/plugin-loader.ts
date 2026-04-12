@@ -868,7 +868,7 @@ export function pluginLoader(
     const manifestPath = resolveManifestPath(resolvedPackagePath, pkgJson);
     if (!manifestPath || !existsSync(manifestPath)) {
       throw new Error(
-        `Package ${resolvedPackageName} at ${resolvedPackagePath} does not appear to be a Paperclip plugin (no manifest found).`,
+        `Package ${resolvedPackageName} at ${resolvedPackagePath} does not appear to be a Nova Corps plugin (no manifest found).`,
       );
     }
 

@@ -1074,7 +1074,7 @@ function buildLegacyRoutineTriggerFromRecurrence(
   }
 
   if (issue.legacyRecurrence.until != null || issue.legacyRecurrence.count != null) {
-    warnings.push(`Recurring task ${issue.slug} uses legacy recurrence end bounds; Paperclip will import the routine trigger without those limits.`);
+    warnings.push(`Recurring task ${issue.slug} uses legacy recurrence end bounds; Nova Corps will import the routine trigger without those limits.`);
   }
 
   let cronExpression: string | null = null;
