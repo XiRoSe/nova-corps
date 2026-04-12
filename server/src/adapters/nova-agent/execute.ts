@@ -76,9 +76,18 @@ function buildTools(companyId: string): Anthropic.Tool[] {
       },
     },
     {
+      name: "list_agents",
+      description: "List all agents in the company. Check this BEFORE hiring to avoid creating duplicates.",
+      input_schema: {
+        type: "object" as const,
+        properties: {},
+        required: [],
+      },
+    },
+    {
       name: "hire_agent",
       description:
-        "Hire (create) a new agent in the company. Use this when you need to delegate specialized work to a new team member.",
+        "Hire a new agent. IMPORTANT: First call list_agents to check if one already exists for this role.",
       input_schema: {
         type: "object" as const,
         properties: {
@@ -101,29 +110,25 @@ function buildTools(companyId: string): Anthropic.Tool[] {
 // ---------------------------------------------------------------------------
 
 function buildSystemPrompt(agent: AdapterExecutionContext["agent"], authToken: string | undefined): string {
-  return `You are ${agent.name}, an AI agent working inside the Nova Corps platform (a Paperclip fork).
+  return `You are ${agent.name}, an AI agent in Nova Corps.
 
-Your identity:
-- Agent ID: ${agent.id}
-- Company ID: ${agent.companyId}
-- Adapter: ${agent.adapterType ?? "nova_agent"}
+Identity: Agent ${agent.id} | Company ${agent.companyId}
 
-You operate by reading and managing issues in your company's issue tracker. You can:
-- View issues assigned to you or others
-- Update issue statuses as you make progress
-- Add comments to communicate with other agents and stakeholders
-- Create sub-issues to break down complex tasks
-- Hire new agents when you need specialized help
+You manage issues (tasks) in your company. Available actions:
+- list_issues: See all tasks
+- get_issue: Read task details
+- update_issue_status: Change status (todo → in_progress → done)
+- add_comment: Document progress or decisions
+- create_sub_issue: Break down complex tasks
+- hire_agent: Request a new team member (only if none exist for the role)
 
-When you receive a task:
-1. Read the issue details carefully
-2. Break down the work if needed (create sub-issues)
-3. Update the status to show you're working on it
-4. Add comments to document your progress and decisions
-5. Mark issues as done when complete
-
-Always be thorough, communicate clearly via comments, and keep issue statuses up to date.
-Respond concisely when no tool calls are needed.`;
+Rules:
+- Be efficient. Don't repeat actions you've already taken.
+- Before hiring, check if agents already exist by listing issues — if sub-tasks are assigned, the team exists.
+- Only hire when there's a clear need and no existing agent fills the role.
+- Update issue status as you work. Mark done when complete.
+- Keep comments brief and actionable.
+- If there's nothing to do, say so and stop. Don't invent busywork.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +230,11 @@ async function executeToolCall(
 
     case "list_issues":
       url = `${API_BASE}/companies/${companyId}/issues`;
+      method = "GET";
+      break;
+
+    case "list_agents":
+      url = `${API_BASE}/companies/${companyId}/agents`;
       method = "GET";
       break;
 
@@ -411,6 +421,12 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       `[nova-agent] Completed. Rounds: ${rounds}, Input tokens: ${totalInputTokens}, Output tokens: ${totalOutputTokens}\n`,
     );
 
+    // Estimate cost (Sonnet 4.5: $3/M input, $15/M output)
+    const inputCost = ((totalInputTokens + totalCacheCreation) / 1_000_000) * 3;
+    const outputCost = (totalOutputTokens / 1_000_000) * 15;
+    const cachedCost = (totalCacheRead / 1_000_000) * 0.3;
+    const totalCost = inputCost + outputCost + cachedCost;
+
     return {
       exitCode: 0,
       signal: null,
@@ -421,8 +437,10 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         outputTokens: totalOutputTokens,
         cachedInputTokens: totalCacheRead,
       },
+      costUsd: Math.round(totalCost * 10000) / 10000,
       model,
       provider: "anthropic",
+      billingType: "api",
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
