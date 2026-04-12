@@ -293,7 +293,7 @@ export const pluginsApi = {
    * ```
    */
   listUiContributions: () =>
-    api.get<PluginUiContribution[]>("/plugins/ui-contributions"),
+    api.get<PluginUiContribution[]>("/plugins/ui-contributions").catch(() => [] as PluginUiContribution[]),
 
   // ===========================================================================
   // Plugin configuration endpoints
