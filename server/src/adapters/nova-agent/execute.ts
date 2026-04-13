@@ -372,10 +372,94 @@ async function executeToolCall(
 }
 
 // ---------------------------------------------------------------------------
-// Main execute function
+// Container delegation — routes to per-user Nova Agent container if available
+// ---------------------------------------------------------------------------
+
+async function executeViaContainer(
+  ctx: AdapterExecutionContext,
+  containerUrl: string,
+): Promise<AdapterExecutionResult> {
+  const { runId, agent, config, context, onLog, authToken } = ctx;
+  const model = (config.model as string) || "claude-sonnet-4-5-20250929";
+  const agentExt = agent as Record<string, unknown>;
+
+  await onLog("stdout", JSON.stringify({ type: "system", text: `Delegating to container: ${containerUrl}` }) + "\n");
+
+  try {
+    const response = await fetch(`${containerUrl}/agents/${agent.id}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agentId: agent.id,
+        agentName: agent.name,
+        role: agentExt.role ?? "general",
+        title: agentExt.title ?? "",
+        capabilities: agentExt.capabilities ?? "",
+        context,
+        paperclipApiUrl: API_BASE,
+        paperclipAuthToken: authToken,
+        model,
+        companyId: agent.companyId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      await onLog("stderr", `Container error (${response.status}): ${errText}\n`);
+      return { exitCode: 1, signal: null, timedOut: false, errorMessage: `Container returned ${response.status}` };
+    }
+
+    let lastResult: Record<string, unknown> = {};
+    const actions: Array<{ tool: string; ok: boolean }> = [];
+    const text = await response.text();
+
+    for (const line of text.split("\n")) {
+      if (!line.trim()) continue;
+      await onLog("stdout", line + "\n");
+      try {
+        const parsed = JSON.parse(line);
+        if (parsed.type === "result") lastResult = parsed;
+        if (parsed.type === "tool_result") actions.push({ tool: parsed.name, ok: parsed.ok });
+      } catch { /* skip non-JSON lines */ }
+    }
+
+    return {
+      exitCode: 0,
+      signal: null,
+      timedOut: false,
+      summary: String(lastResult.summary ?? "Run complete"),
+      resultJson: { summary: lastResult.summary, actions },
+      usage: {
+        inputTokens: Number(lastResult.inputTokens ?? 0),
+        outputTokens: Number(lastResult.outputTokens ?? 0),
+        cachedInputTokens: 0,
+      },
+      costUsd: Number(lastResult.costUsd ?? 0),
+      model,
+      provider: "anthropic",
+      billingType: "api",
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await onLog("stderr", `Container connection failed: ${msg}\n`);
+    return { exitCode: 1, signal: null, timedOut: false, errorMessage: msg };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main execute function — delegates to container or runs locally
 // ---------------------------------------------------------------------------
 
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
+  const containerUrl = process.env.NOVA_CONTAINER_URL;
+  if (containerUrl && ctx.authToken) {
+    return executeViaContainer(ctx, containerUrl);
+  }
+  // Fall back to local execution (direct Anthropic API call)
+  return executeLocal(ctx);
+}
+
+async function executeLocal(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
   const { runId, agent, config, context, onLog, authToken } = ctx;
 
   const model = (config.model as string) || "claude-sonnet-4-5-20250929";
