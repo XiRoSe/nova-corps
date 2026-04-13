@@ -108,6 +108,11 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     icon: Cpu,
     comingSoon: true,
   },
+  nova_agent: {
+    label: "Nova Agent",
+    description: "Autonomous AI agent with full capabilities",
+    icon: Bot,
+  },
 };
 
 // ---------------------------------------------------------------------------
