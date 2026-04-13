@@ -23,7 +23,6 @@ import { InstanceSettings } from "./pages/InstanceSettings";
 import { InstanceExperimentalSettings } from "./pages/InstanceExperimentalSettings";
 import { NewAgent } from "./pages/NewAgent";
 import { NovaChat } from "./pages/NovaChat";
-import { NovaChannels } from "./pages/NovaChannels";
 import { AuthPage } from "./pages/Auth";
 import { BoardClaimPage } from "./pages/BoardClaim";
 import { CliAuthPage } from "./pages/CliAuth";
@@ -109,8 +108,7 @@ function boardRoutes() {
       <Route path="home" element={<NovaHome />} />
       <Route path="dashboard" element={<Dashboard />} />
       <Route path="chat" element={<NovaChat />} />
-      <Route path="channels" element={<NovaChannels />} />
-      <Route path="onboarding" element={<OnboardingRoutePage />} />
+<Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />
       <Route path="settings" element={<LegacySettingsRedirect />} />

@@ -8,7 +8,6 @@ import {
   SquarePen,
   Settings,
   MessageCircle,
-  Radio,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarSection } from "./SidebarSection";
@@ -63,8 +62,7 @@ export function Sidebar() {
         <div className="flex flex-col gap-0.5">
           <SidebarNavItem to="/home" label="Home" icon={Home} />
           <SidebarNavItem to="/chat" label="Team Chat" icon={MessageCircle} />
-          <SidebarNavItem to="/channels" label="Channels" icon={Radio} />
-          <SidebarNavItem
+<SidebarNavItem
             to="/inbox"
             label="Inbox"
             icon={Inbox}
