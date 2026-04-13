@@ -223,10 +223,10 @@ function scrollToContainerBottom(container: ScrollContainer, behavior: ScrollBeh
   container.scrollTo({ top: container.scrollHeight, behavior });
 }
 
-type AgentDetailView = "dashboard" | "instructions" | "configuration" | "runs" | "budget";
+type AgentDetailView = "dashboard" | "configuration" | "runs" | "budget";
 
 function parseAgentDetailView(value: string | null): AgentDetailView {
-  if (value === "instructions" || value === "prompts") return "instructions";
+
   if (value === "configure" || value === "configuration") return "configuration";
 
   if (value === "budget") return "budget";
@@ -738,11 +738,9 @@ export function AgentDetail() {
       return;
     }
     const canonicalTab =
-      activeView === "instructions"
-        ? "instructions"
-        : activeView === "configuration"
-          ? "configuration"
-          : activeView === "runs"
+      activeView === "configuration"
+        ? "configuration"
+        : activeView === "runs"
               ? "runs"
               : activeView === "budget"
                 ? "budget"
@@ -1003,8 +1001,6 @@ export function AgentDetail() {
           <PageTabBar
             items={[
               { value: "dashboard", label: "Dashboard" },
-              { value: "instructions", label: "Instructions" },
-
               { value: "configuration", label: "Configuration" },
               { value: "runs", label: "Runs" },
               { value: "budget", label: "Budget" },

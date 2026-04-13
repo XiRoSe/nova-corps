@@ -395,6 +395,8 @@ async function executeViaContainer(
         role: agentExt.role ?? "general",
         title: agentExt.title ?? "",
         capabilities: agentExt.capabilities ?? "",
+        ownerName: process.env.NOVA_OWNER_NAME || "",
+        companyName: process.env.NOVA_COMPANY_NAME || "",
         context,
         paperclipApiUrl: process.env.PAPERCLIP_PUBLIC_API_URL || API_BASE,
         paperclipAuthToken: authToken,
