@@ -451,7 +451,16 @@ async function executeViaContainer(
 // ---------------------------------------------------------------------------
 
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
-  const containerUrl = process.env.NOVA_CONTAINER_URL;
+  // Try to get a container URL for this company (checks DB registry + env var)
+  let containerUrl: string | null = null;
+  try {
+    const { getContainerUrl } = await import("../../services/container-provisioner.js");
+    containerUrl = getContainerUrl(ctx.agent.companyId);
+  } catch {
+    // Provisioner not initialized — check env var directly
+    containerUrl = process.env.NOVA_CONTAINER_URL || null;
+  }
+
   if (containerUrl && ctx.authToken) {
     return executeViaContainer(ctx, containerUrl);
   }

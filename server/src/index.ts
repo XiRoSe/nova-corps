@@ -649,6 +649,14 @@ export async function startServer(): Promise<StartedServer> {
   const { waitForExternalAdapters } = await import("./adapters/registry.js");
   await waitForExternalAdapters();
 
+  // Initialize container provisioner — loads existing container URLs from DB
+  try {
+    const { initProvisioner } = await import("./services/container-provisioner.js");
+    await initProvisioner(db);
+  } catch (err) {
+    logger.warn({ err }, "Container provisioner init failed (non-fatal)");
+  }
+
   await new Promise<void>((resolveListen, rejectListen) => {
     const onError = (err: Error) => {
       server.off("error", onError);
