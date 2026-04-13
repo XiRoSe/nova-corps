@@ -406,8 +406,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const userPrompt = buildUserPrompt(context);
   const tools = buildTools(agent.companyId);
 
-  await onLog("stdout", `[nova-agent] Starting run ${runId} for ${agent.name} (${agent.title || agent.role})\n`);
-  await onLog("stdout", `[nova-agent] Model: ${model}\n`);
+  await onLog("stdout", JSON.stringify({ type: "init", agent: agent.name, role: (agent as any).role, model }) + "\n");
 
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
@@ -416,6 +415,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   let lastTextResponse = "";
   let rounds = 0;
 
+  const actions: Array<{ tool: string; input: unknown; ok: boolean }> = [];
+
   const messages: Anthropic.MessageParam[] = [
     { role: "user", content: userPrompt },
   ];
@@ -423,7 +424,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   try {
     while (rounds < MAX_TOOL_ROUNDS) {
       rounds++;
-      await onLog("stdout", `[nova-agent] API call round ${rounds}/${MAX_TOOL_ROUNDS}\n`);
+      await onLog("stdout", JSON.stringify({ type: "system", text: `API call round ${rounds}/${MAX_TOOL_ROUNDS}` }) + "\n");
 
       const response = await anthropic.messages.create({
         model,
@@ -453,12 +454,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       for (const tb of textBlocks) {
         if (tb.text) {
           lastTextResponse = tb.text;
-          await onLog("stdout", `[nova-agent] ${tb.text}\n`);
+          await onLog("stdout", JSON.stringify({ type: "thinking", text: tb.text }) + "\n");
         }
       }
 
       if (toolUseBlocks.length === 0) {
-        await onLog("stdout", `[nova-agent] No more tool calls — finishing.\n`);
         break;
       }
 
@@ -467,10 +467,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
       for (const toolUse of toolUseBlocks) {
-        await onLog(
-          "stdout",
-          `[nova-agent] Tool call: ${toolUse.name}(${JSON.stringify(toolUse.input)})\n`,
-        );
+        await onLog("stdout", JSON.stringify({ type: "tool_call", name: toolUse.name, input: toolUse.input, toolUseId: toolUse.id }) + "\n");
 
         const result = await executeToolCall(
           toolUse.name,
@@ -481,11 +478,10 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         );
 
         const resultText = typeof result.body === "string" ? result.body : JSON.stringify(result.body, null, 2);
+        const preview = resultText.slice(0, 300);
 
-        await onLog(
-          "stdout",
-          `[nova-agent] Tool result (${result.ok ? "ok" : "error"}): ${resultText.slice(0, 500)}${resultText.length > 500 ? "..." : ""}\n`,
-        );
+        await onLog("stdout", JSON.stringify({ type: "tool_result", name: toolUse.name, ok: result.ok, preview, toolUseId: toolUse.id }) + "\n");
+        actions.push({ tool: toolUse.name, input: toolUse.input, ok: result.ok });
 
         toolResults.push({
           type: "tool_result",
@@ -502,22 +498,20 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       await onLog("stderr", `[nova-agent] Reached maximum tool call rounds (${MAX_TOOL_ROUNDS})\n`);
     }
 
-    await onLog(
-      "stdout",
-      `[nova-agent] Completed. Rounds: ${rounds}, Input tokens: ${totalInputTokens}, Output tokens: ${totalOutputTokens}\n`,
-    );
-
     // Estimate cost (Sonnet 4.5: $3/M input, $15/M output)
     const inputCost = ((totalInputTokens + totalCacheCreation) / 1_000_000) * 3;
     const outputCost = (totalOutputTokens / 1_000_000) * 15;
     const cachedCost = (totalCacheRead / 1_000_000) * 0.3;
     const totalCost = inputCost + outputCost + cachedCost;
 
+    await onLog("stdout", JSON.stringify({ type: "result", summary: lastTextResponse || `Completed ${rounds} round(s)`, rounds, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, costUsd: Math.round(totalCost * 10000) / 10000 }) + "\n");
+
     return {
       exitCode: 0,
       signal: null,
       timedOut: false,
       summary: lastTextResponse || `Completed ${rounds} round(s) of tool calls`,
+      resultJson: { summary: lastTextResponse || `Completed ${rounds} round(s)`, actions },
       usage: {
         inputTokens: totalInputTokens + totalCacheCreation + totalCacheRead,
         outputTokens: totalOutputTokens,
