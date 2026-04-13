@@ -18,11 +18,13 @@ const OWNER_TAGS = ["**Question**", "**Blocker**", "**Decision**", "**Done**"] a
 type TagType = "question" | "blocker" | "decision" | "done" | "update";
 
 function detectTag(body: string): TagType {
-  const lower = body.slice(0, 80);
-  if (lower.includes("**Question**") || lower.includes("**question**")) return "question";
-  if (lower.includes("**Blocker**") || lower.includes("**blocker**")) return "blocker";
-  if (lower.includes("**Decision**") || lower.includes("**decision**")) return "decision";
-  if (lower.includes("**Done**") || lower.includes("**done**")) return "done";
+  const start = body.slice(0, 120);
+  if (start.includes("**Question**") || start.includes("**question**")) return "question";
+  if (start.includes("**Blocker**") || start.includes("**blocker**")) return "blocker";
+  if (start.includes("**Decision**") || start.includes("**decision**")) return "decision";
+  if (start.includes("**Done**") || start.includes("**done**")) return "done";
+  // @owner means the agent is addressing the user directly
+  if (body.includes("@owner")) return "question";
   return "update";
 }
 
