@@ -427,7 +427,8 @@ export function deriveIssueUserContext(
   const assignedTouchAt = issue.assigneeUserId === userId ? normalizeDate(issue.updatedAt) : null;
   const myLastTouchAt = [myLastCommentAt, myLastReadAt, createdTouchAt, assignedTouchAt]
     .filter((value): value is Date => value instanceof Date)
-    .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
+    .sort((a, b) => b.getTime() - a.getTime())[0]
+    ?? normalizeDate(issue.createdAt);
   const lastExternalCommentAt = normalizeDate(stats?.lastExternalCommentAt);
   const isUnreadForMe = Boolean(
     myLastTouchAt &&

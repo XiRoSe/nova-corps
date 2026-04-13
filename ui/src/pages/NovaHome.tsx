@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bot, Zap, CheckCircle2, Clock, Plus, DollarSign, Loader2, MessageSquare, Users, ListTodo } from "lucide-react";
+import { Bot, Zap, CheckCircle2, Clock, Plus, DollarSign, Loader2, MessageSquare, Users, ListTodo, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
 import { useCompany } from "@/context/CompanyContext";
@@ -217,6 +218,27 @@ export function NovaHome() {
 
   const totalSpend = costs ? `$${(costs.spendCents / 100).toFixed(2)}` : "$0.00";
 
+  // Give Goal
+  const [goalInput, setGoalInput] = useState("");
+  const [submittingGoal, setSubmittingGoal] = useState(false);
+  const ceoAgent = agents.find((a: Agent) => (a as any).role === "ceo") ?? agents[0];
+
+  const handleGiveGoal = async () => {
+    if (!goalInput.trim() || !selectedCompanyId || !ceoAgent) return;
+    setSubmittingGoal(true);
+    try {
+      await issuesApi.create(selectedCompanyId, {
+        title: goalInput.trim(),
+        assigneeAgentId: ceoAgent.id,
+        status: "todo",
+      });
+      await agentsApi.invoke(ceoAgent.id, selectedCompanyId);
+      setGoalInput("");
+      issuesQuery.refetch();
+    } catch { /* silent */ }
+    setSubmittingGoal(false);
+  };
+
   return (
     <div className="h-full overflow-y-auto scrollbar-auto-hide">
       <div className="max-w-4xl mx-auto px-6 py-8 pb-20">
@@ -227,6 +249,27 @@ export function NovaHome() {
             Your AI agent team — assign tasks, track progress, build together.
           </p>
         </div>
+
+        {/* Give Goal */}
+        {agents.length > 0 && (
+          <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <p className="text-sm font-medium text-foreground mb-2">What should your team work on?</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleGiveGoal()}
+                placeholder="e.g. Build a go-to-market strategy for our SaaS product"
+                className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                disabled={submittingGoal}
+              />
+              <Button onClick={handleGiveGoal} disabled={!goalInput.trim() || submittingGoal}>
+                {submittingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
