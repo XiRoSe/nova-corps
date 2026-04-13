@@ -23,6 +23,7 @@ import { instanceSettingsRoutes } from "./routes/instance-settings.js";
 import { llmRoutes } from "./routes/llms.js";
 import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
+import { messagesRoutes } from "./routes/messages.js";
 import { applyUiBranding } from "./ui-branding.js";
 import { logger } from "./middleware/logger.js";
 import type { BetterAuthSessionResult } from "./auth/better-auth.js";
@@ -135,6 +136,7 @@ export async function createApp(
   api.use(dashboardRoutes(db));
   api.use(sidebarBadgeRoutes(db));
   api.use(inboxDismissalRoutes(db));
+  api.use(messagesRoutes(db));
   api.use(instanceSettingsRoutes(db));
 api.use(
     accessRoutes(db, {

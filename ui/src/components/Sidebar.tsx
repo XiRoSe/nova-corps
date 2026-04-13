@@ -17,13 +17,19 @@ import { useDialog } from "../context/DialogContext";
 import { useCompany } from "../context/CompanyContext";
 import { heartbeatsApi } from "../api/heartbeats";
 import { queryKeys } from "../lib/queryKeys";
-import { useInboxBadge } from "../hooks/useInboxBadge";
+import { messagesApi } from "../api/messages";
 import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
   const { openNewIssue } = useDialog();
   const { selectedCompanyId, selectedCompany } = useCompany();
-  const inboxBadge = useInboxBadge(selectedCompanyId);
+  const { data: unreadData } = useQuery({
+    queryKey: ["nova-messages-unread", selectedCompanyId],
+    queryFn: () => messagesApi.unreadCount(selectedCompanyId!),
+    enabled: !!selectedCompanyId,
+    refetchInterval: 15_000,
+  });
+  const inboxBadgeCount = unreadData?.count ?? 0;
   const { data: liveRuns } = useQuery({
     queryKey: queryKeys.liveRuns(selectedCompanyId!),
     queryFn: () => heartbeatsApi.liveRunsForCompany(selectedCompanyId!),
@@ -66,9 +72,7 @@ export function Sidebar() {
             to="/inbox"
             label="Inbox"
             icon={Inbox}
-            badge={inboxBadge.inbox}
-            badgeTone={inboxBadge.failedRuns > 0 ? "danger" : "default"}
-            alert={inboxBadge.failedRuns > 0}
+            badge={inboxBadgeCount}
           />
         </div>
 
