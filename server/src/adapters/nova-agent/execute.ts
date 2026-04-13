@@ -244,7 +244,7 @@ function buildUserPrompt(context: Record<string, unknown>): string {
 }
 
 // ---------------------------------------------------------------------------
-// Paperclip API caller
+// Nova Corps API caller
 // ---------------------------------------------------------------------------
 
 interface ToolInput {
@@ -492,7 +492,7 @@ async function executeLocal(ctx: AdapterExecutionContext): Promise<AdapterExecut
       exitCode: 1,
       signal: null,
       timedOut: false,
-      errorMessage: "No authToken provided — cannot call Paperclip API",
+      errorMessage: "No authToken provided — cannot call Nova Corps API",
     };
   }
 

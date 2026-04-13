@@ -429,7 +429,7 @@ function generateReadmeFromSelection(
 
   lines.push("## What's Inside");
   lines.push("");
-  lines.push("This is an [Agent Company](https://paperclip.ing) package from [Nova Corps](https://paperclip.ing).");
+  lines.push("This is an Agent Company package from Nova Corps.");
   lines.push("");
 
   const counts: Array<[string, number]> = [];
@@ -476,10 +476,10 @@ function generateReadmeFromSelection(
   lines.push("pnpm nova-corps company import this-github-url-or-folder");
   lines.push("```");
   lines.push("");
-  lines.push("See [Nova Corps](https://paperclip.ing) for more information.");
+  lines.push("See [Nova Corps](https://nova-corps-production.up.railway.app) for more information.");
   lines.push("");
   lines.push("---");
-  lines.push(`Exported from [Nova Corps](https://paperclip.ing) on ${new Date().toISOString().split("T")[0]}`);
+  lines.push(`Exported from [Nova Corps](https://nova-corps-production.up.railway.app) on ${new Date().toISOString().split("T")[0]}`);
   lines.push("");
 
   return lines.join("\n");

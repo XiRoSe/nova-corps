@@ -375,7 +375,7 @@ export function ProjectWorkspaceDetail() {
                 </div>
                 <h1 className="text-2xl font-semibold">{workspace.name}</h1>
                 <p className="max-w-2xl text-sm text-muted-foreground">
-                  Configure the concrete workspace Paperclip attaches to this project. These values drive per-workspace
+                  Configure the concrete workspace Nova Corps attaches to this project. These values drive per-workspace
                   checkout behavior, default runtime services for child execution workspaces, and let you override setup
                   or cleanup commands when one workspace needs special handling.
                 </p>
