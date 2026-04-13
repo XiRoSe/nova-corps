@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useMemo } from "react";
+import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@/lib/router";
 import { Bot, Inbox as InboxIcon } from "lucide-react";
 import { useCompany } from "@/context/CompanyContext";
@@ -8,10 +8,16 @@ import { agentsApi } from "@/api/agents";
 import { issuesApi } from "@/api/issues";
 import { queryKeys } from "@/lib/queryKeys";
 import { timeAgo } from "@/lib/timeAgo";
-import { issueLastActivityTimestamp, sortIssuesByMostRecentActivity } from "@/lib/inbox";
 import { EmptyState } from "@/components/EmptyState";
 import { PageSkeleton } from "@/components/PageSkeleton";
-import type { Agent, Issue } from "@paperclipai/shared";
+import type { Agent, Issue, IssueComment } from "@paperclipai/shared";
+
+interface AgentMessage {
+  comment: IssueComment;
+  issue: Issue;
+  agentName: string;
+  isUnread: boolean;
+}
 
 export function Inbox() {
   const { selectedCompanyId } = useCompany();
@@ -22,9 +28,9 @@ export function Inbox() {
     setBreadcrumbs([{ label: "Inbox" }]);
   }, [setBreadcrumbs]);
 
-  const { data: issues, isLoading } = useQuery({
+  const { data: issues, isLoading: issuesLoading } = useQuery({
     queryKey: queryKeys.issues.listTouchedByMe(selectedCompanyId!),
-    queryFn: () => issuesApi.list(selectedCompanyId!, { limit: 50 }),
+    queryFn: () => issuesApi.list(selectedCompanyId!, { limit: 30 }),
     enabled: !!selectedCompanyId,
   });
 
@@ -32,6 +38,14 @@ export function Inbox() {
     queryKey: queryKeys.agents.list(selectedCompanyId!),
     queryFn: () => agentsApi.list(selectedCompanyId!),
     enabled: !!selectedCompanyId,
+  });
+
+  const commentQueries = useQueries({
+    queries: (issues ?? []).map((issue) => ({
+      queryKey: queryKeys.issues.comments(issue.id),
+      queryFn: () => issuesApi.listComments(issue.id, { order: "desc", limit: 5 }),
+      enabled: !!selectedCompanyId,
+    })),
   });
 
   const markRead = useMutation({
@@ -51,15 +65,38 @@ export function Inbox() {
     return map;
   }, [agents]);
 
-  const sortedIssues = useMemo(
-    () => [...(issues ?? [])].sort(sortIssuesByMostRecentActivity),
-    [issues],
-  );
+  const messages = useMemo((): AgentMessage[] => {
+    if (!issues) return [];
+
+    const result: AgentMessage[] = [];
+    for (let i = 0; i < issues.length; i++) {
+      const issue = issues[i];
+      const comments = commentQueries[i]?.data ?? [];
+      for (const comment of comments) {
+        if (!comment.authorAgentId) continue;
+        const agent = agentById.get(comment.authorAgentId);
+        result.push({
+          comment,
+          issue,
+          agentName: agent?.name ?? "Agent",
+          isUnread: !!issue.isUnreadForMe,
+        });
+      }
+    }
+
+    return result.sort(
+      (a, b) =>
+        new Date(b.comment.createdAt).getTime() - new Date(a.comment.createdAt).getTime(),
+    );
+  }, [issues, commentQueries, agentById]);
 
   const unreadCount = useMemo(
-    () => sortedIssues.filter((i) => i.isUnreadForMe).length,
-    [sortedIssues],
+    () => new Set(messages.filter((m) => m.isUnread).map((m) => m.issue.id)).size,
+    [messages],
   );
+
+  const commentsLoading = commentQueries.some((q) => q.isLoading);
+  const isLoading = issuesLoading || (commentsLoading && messages.length === 0);
 
   if (!selectedCompanyId) {
     return <EmptyState icon={InboxIcon} message="Select a company to view your inbox." />;
@@ -82,68 +119,55 @@ export function Inbox() {
       </div>
 
       {/* Message list */}
-      {sortedIssues.length === 0 ? (
+      {messages.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
-          <EmptyState icon={InboxIcon} message="You're all caught up." />
+          <EmptyState icon={InboxIcon} message="No agent messages yet." />
         </div>
       ) : (
         <ul className="divide-y divide-border">
-          {sortedIssues.map((issue) => {
-            const agent = issue.assigneeAgentId ? agentById.get(issue.assigneeAgentId) : null;
-            const activityTs = issueLastActivityTimestamp(issue);
-            const activityDate = activityTs > 0 ? new Date(activityTs) : new Date(issue.updatedAt);
-            const isUnread = !!issue.isUnreadForMe;
+          {messages.map(({ comment, issue, agentName, isUnread }) => (
+            <li key={comment.id}>
+              <Link
+                to={`/issues/${issue.identifier ?? issue.id}`}
+                onClick={() => {
+                  if (isUnread) markRead.mutate(issue.id);
+                }}
+                className="flex items-center gap-3 px-6 py-3.5 hover:bg-muted/50 transition-colors cursor-pointer"
+              >
+                {/* Unread dot */}
+                <div className="w-2 shrink-0">
+                  {isUnread && <span className="w-2 h-2 rounded-full bg-blue-500 block" />}
+                </div>
 
-            return (
-              <li key={issue.id}>
-                <Link
-                  to={`/issues/${issue.identifier ?? issue.id}`}
-                  onClick={() => {
-                    if (isUnread) markRead.mutate(issue.id);
-                  }}
-                  className="flex items-center gap-3 px-6 py-3.5 hover:bg-muted/50 transition-colors cursor-pointer"
-                >
-                  {/* Unread dot */}
-                  <div className="w-2 flex-shrink-0 flex items-center justify-center">
-                    {isUnread && (
-                      <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                {/* Agent avatar */}
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Bot className="w-4 h-4 text-primary" />
+                </div>
+
+                {/* Message content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-sm ${isUnread ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                    >
+                      {agentName}
+                    </span>
+                    {issue.identifier && (
+                      <span className="text-xs text-muted-foreground">{issue.identifier}</span>
                     )}
                   </div>
+                  <p className="text-sm text-muted-foreground truncate mt-0.5">
+                    {comment.body.slice(0, 120)}
+                  </p>
+                </div>
 
-                  {/* Agent avatar */}
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-muted-foreground" />
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-sm truncate ${isUnread ? "font-semibold text-foreground" : "font-medium text-muted-foreground"}`}
-                      >
-                        {agent?.name ?? "Agent"}
-                      </span>
-                      {issue.identifier && (
-                        <span className="text-xs text-muted-foreground flex-shrink-0">
-                          {issue.identifier}
-                        </span>
-                      )}
-                    </div>
-                    <p
-                      className={`text-sm truncate mt-0.5 ${isUnread ? "text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {issue.title}
-                    </p>
-                  </div>
-
-                  {/* Time */}
-                  <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
-                    {timeAgo(activityDate)}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
+                {/* Time */}
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {timeAgo(new Date(comment.createdAt))}
+                </span>
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
     </div>
