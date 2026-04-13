@@ -857,8 +857,6 @@ export function AgentDetail() {
       if (urlRunId) {
         crumbs.push({ label: "Runs", href: `/agents/${canonicalAgentRef}/runs` });
         crumbs.push({ label: `Run ${urlRunId.slice(0, 8)}` });
-      } else if (activeView === "instructions") {
-        crumbs.push({ label: "Instructions" });
       } else if (activeView === "configuration") {
         crumbs.push({ label: "Configuration" });
       // } else if (activeView === "skills") { // TODO: bring back later
@@ -894,7 +892,7 @@ export function AgentDetail() {
     return <Navigate to={`/agents/${canonicalAgentRef}/dashboard`} replace />;
   }
   const isPendingApproval = agent.status === "pending_approval";
-  const showConfigActionBar = (activeView === "configuration" || activeView === "instructions") && (configDirty || configSaving);
+  const showConfigActionBar = activeView === "configuration" && (configDirty || configSaving);
 
   return (
     <div className={cn("space-y-6", isMobile && showConfigActionBar && "pb-24")}>
@@ -1083,17 +1081,6 @@ export function AgentDetail() {
           runtimeState={runtimeState}
           agentId={agent.id}
           agentRouteId={canonicalAgentRef}
-        />
-      )}
-
-      {activeView === "instructions" && (
-        <PromptsTab
-          agent={agent}
-          companyId={resolvedCompanyId ?? undefined}
-          onDirtyChange={setConfigDirty}
-          onSaveActionChange={setSaveConfigAction}
-          onCancelActionChange={setCancelConfigAction}
-          onSavingChange={setConfigSaving}
         />
       )}
 
