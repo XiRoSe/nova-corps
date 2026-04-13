@@ -396,7 +396,7 @@ async function executeViaContainer(
         title: agentExt.title ?? "",
         capabilities: agentExt.capabilities ?? "",
         context,
-        paperclipApiUrl: API_BASE,
+        paperclipApiUrl: process.env.PAPERCLIP_PUBLIC_API_URL || API_BASE,
         paperclipAuthToken: authToken,
         model,
         companyId: agent.companyId,
